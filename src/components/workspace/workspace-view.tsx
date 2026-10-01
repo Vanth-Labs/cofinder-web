@@ -1,18 +1,12 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { AxiosError } from "axios";
-import {
-  ChevronDown,
-  ChevronRight,
-  Plus,
-  MessageSquare,
-  ArrowUp,
-  ArrowDown,
-} from "lucide-react";
+import { AlertDialog } from "radix-ui";
+import { Check, ListTree, MessageSquare, Network, Plus, X } from "lucide-react";
 import { api } from "@/lib/api";
 import { useRequireAuth } from "@/hooks/use-require-auth";
 import { useAuthStore } from "@/store/auth.store";
@@ -22,20 +16,21 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   PACKAGE_STATES,
   deadlineLabel,
+  deadlineInput,
+  deadlineInstant,
   Workspace,
   WorkPackage,
-  WorkProject,
   WorkspaceMember,
 } from "@/lib/workspace";
+import { EdtBoard } from "./edt-board";
+import "./workspace.css";
 
-const selectClass = "w-full rounded-lg border bg-background px-3 py-2 text-sm";
 type Change = {
   method: "post" | "patch" | "put" | "delete";
   path: string;
   data?: unknown;
   selectCreated?: boolean;
 };
-
 function TitleForm({
   label,
   initial = "",
@@ -50,13 +45,11 @@ function TitleForm({
   const [title, setTitle] = useState(initial);
   return (
     <form
-      className="flex flex-wrap gap-2"
-      onSubmit={async (e) => {
-        e.preventDefault();
-        if (title.trim()) {
-          const saved = await submit(title.trim());
-          if (saved && !initial) setTitle("");
-        }
+      className="flex gap-2"
+      onSubmit={async (event) => {
+        event.preventDefault();
+        if (title.trim() && (await submit(title.trim())) && !initial)
+          setTitle("");
       }}
     >
       <Input
@@ -64,71 +57,52 @@ function TitleForm({
         placeholder={label}
         value={title}
         maxLength={200}
-        onChange={(e) => setTitle(e.target.value)}
-        className="min-w-32 flex-1"
+        onChange={(event) => setTitle(event.target.value)}
+        className="min-w-0 flex-1"
         required
       />
-      <Button type="submit" disabled={pending || !title.trim()}>
+      <Button
+        type="submit"
+        variant="outline"
+        disabled={pending || !title.trim()}
+      >
         {initial ? "Renombrar" : "Crear"}
       </Button>
     </form>
   );
 }
-
-function PackageEditor({
+function PackageDetails({
   node,
-  project,
   members,
   pending,
   save,
 }: {
   node: WorkPackage;
-  project: WorkProject;
   members: WorkspaceMember[];
   pending: boolean;
-  save: (data: unknown) => void;
+  save: (data: Record<string, unknown>) => Promise<boolean>;
 }) {
-  const [title, setTitle] = useState(node.title);
   const [leaderId, setLeaderId] = useState(node.leaderId ?? "");
-  const [deadline, setDeadline] = useState(node.deadline?.slice(0, 10) ?? "");
-  const [parentId, setParentId] = useState(node.parentId ?? "");
-  const [saved, setSaved] = useState(false);
+  const [deadline, setDeadline] = useState(deadlineInput(node.deadline));
   return (
     <form
-      className="flex flex-col gap-3"
-      onChange={() => setSaved(false)}
-      onSubmit={(e) => {
-        e.preventDefault();
-        // Send only changed fields so editing a title does not overwrite another owner's assignments.
+      className="edt-details-form"
+      onSubmit={(event) => {
+        event.preventDefault();
         const data: Record<string, unknown> = {};
-        if (title.trim() !== node.title) data.title = title.trim();
         if (leaderId !== (node.leaderId ?? ""))
           data.leaderId = leaderId || null;
-        if (parentId !== (node.parentId ?? ""))
-          data.parentId = parentId || null;
-        if (node.isLeaf && deadline !== (node.deadline?.slice(0, 10) ?? ""))
-          data.deadline = deadline || null;
-        save(data);
-        setSaved(true);
+        if (node.isLeaf && deadline !== deadlineInput(node.deadline))
+          data.deadline = deadlineInstant(deadline);
+        void save(data);
       }}
     >
-      <label className="text-sm">
-        Nombre del paquete
-        <Input
-          value={title}
-          maxLength={200}
-          required
-          onChange={(e) => setTitle(e.target.value)}
-        />
-      </label>
-
-      <label className="text-sm">
+      <label className="edt-field">
         Jefe del paquete
         <select
           aria-label="Jefe del paquete"
-          className={selectClass}
           value={leaderId}
-          onChange={(e) => setLeaderId(e.target.value)}
+          onChange={(event) => setLeaderId(event.target.value)}
         >
           <option value="">Sin asignar</option>
           {members.map((member) => (
@@ -137,61 +111,34 @@ function PackageEditor({
             </option>
           ))}
           {node.leaderId && !members.some((m) => m.id === node.leaderId) && (
-            <option value={node.leaderId}>Miembro que salió del equipo</option>
+            <option value={node.leaderId}>Miembro anterior</option>
           )}
         </select>
       </label>
       {node.isLeaf ? (
-        <label className="text-sm">
-          Fecha límite
-          <Input
-            aria-label="Fecha límite"
-            type="date"
+        <label className="edt-field">
+          Fecha y hora límite
+          <input
+            aria-label="Fecha y hora límite"
+            type="datetime-local"
             value={deadline}
-            onChange={(e) => setDeadline(e.target.value)}
+            onChange={(event) => setDeadline(event.target.value)}
           />
-          <span className="text-xs text-muted-foreground">
-            Solo las hojas tienen fecha manual. Puedes cambiarla o borrarla.
-          </span>
+          <small>Hora de Perú (UTC−5).</small>
         </label>
       ) : (
-        <p className="text-sm">
-          Fecha calculada:{" "}
-          <strong>{deadlineLabel(node.effectiveDeadline)}</strong>
-          <br />
-          <span className="text-xs text-muted-foreground">
-            La fecha más tardía de sus subpaquetes.
-          </span>
-        </p>
+        <div className="edt-field">
+          <span>Fecha y hora calculadas</span>
+          <p>{deadlineLabel(node.effectiveDeadline)}</p>
+          <small>La fecha más tardía de sus hijos. Hora de Perú.</small>
+        </div>
       )}
-      <label className="text-sm">
-        Ubicación
-        <select
-          aria-label="Ubicación del paquete"
-          className={selectClass}
-          value={parentId}
-          onChange={(e) => setParentId(e.target.value)}
-        >
-          <option value="">Primer nivel</option>
-          {project.packages
-            .filter(
-              (p) =>
-                p.id !== node.id && !p.number.startsWith(`${node.number}.`),
-            )
-            .map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.number} {p.title}
-              </option>
-            ))}
-        </select>
-      </label>
-      <Button type="submit" disabled={pending || !title.trim()}>
-        {pending && saved ? "Guardando..." : "Guardar cambios"}
+      <Button type="submit" variant="outline" disabled={pending}>
+        Guardar detalles
       </Button>
     </form>
   );
 }
-
 function MemberNote({
   member,
   content,
@@ -202,43 +149,41 @@ function MemberNote({
   member: WorkspaceMember;
   content: string;
   editable: boolean;
-  save: (content: string) => void;
+  save: (text: string) => void;
   pending: boolean;
 }) {
   const [draft, setDraft] = useState(content);
   return (
     <form
-      className="flex flex-col gap-2 rounded-lg border p-3"
-      onSubmit={(e) => {
-        e.preventDefault();
+      className="edt-comment"
+      onSubmit={(event) => {
+        event.preventDefault();
         save(draft);
       }}
     >
-      <label className="text-sm font-medium">
-        {member.name ?? "Miembro"}{" "}
-        {editable && <span className="text-muted-foreground">(tú)</span>}
+      <label>
+        {member.name ?? "Miembro"}
+        {editable && <span>tú</span>}
         <Textarea
           aria-label={`Comentario de ${member.name ?? "Miembro"}`}
           value={editable ? draft : content}
           readOnly={!editable}
-          onChange={(e) => setDraft(e.target.value)}
+          onChange={(event) => setDraft(event.target.value)}
           maxLength={20000}
-          rows={3}
+          rows={2}
           placeholder={
-            editable
-              ? "Escribe tu avance, duda o comentario..."
-              : "Sin comentarios todavía"
+            editable ? "Escribe tu avance o comentario…" : "Sin comentarios"
           }
-          className="mt-2 whitespace-pre-wrap"
         />
       </label>
       {editable && (
         <Button
           type="submit"
-          variant="outline"
+          size="sm"
+          variant="ghost"
           disabled={pending || draft === content}
         >
-          Guardar mi comentario
+          Guardar comentario
         </Button>
       )}
     </form>
@@ -249,14 +194,16 @@ export function WorkspaceView() {
   const ideaId = useParams().id as string;
   const { isAuthenticated } = useRequireAuth();
   const userId = useAuthStore((s) => s.user?.id);
-  const queryClient = useQueryClient();
+  const client = useQueryClient();
   const router = useRouter();
   const params = useSearchParams();
+  const mode = params.get("view") === "outline" ? "outline" : "map";
   const [showComments, setShowComments] = useState(true);
-  const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
+  const [showProjectForm, setShowProjectForm] = useState(false);
   const [notice, setNotice] = useState("");
+  const [editingId, setEditingId] = useState<string | undefined>();
+  const [deleteNode, setDeleteNode] = useState<WorkPackage | null>(null);
   const detailRef = useRef<HTMLElement>(null);
-  const treeRef = useRef<HTMLElement>(null);
   const key = ["workspace", ideaId];
   const query = useQuery<Workspace>({
     queryKey: key,
@@ -272,13 +219,9 @@ export function WorkspaceView() {
   const selected = project?.packages.find(
     (p) => p.id === params.get("package"),
   );
-  useEffect(() => {
-    if (selected?.id && window.innerWidth < 1280)
-      detailRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-  }, [selected?.id]);
   const base = `/workspace/${ideaId}/projects/${project?.id}`;
-  const select = (projectId: string, packageId?: string) => {
-    const search = new URLSearchParams({ project: projectId });
+  const select = (projectId: string, packageId?: string, nextMode = mode) => {
+    const search = new URLSearchParams({ project: projectId, view: nextMode });
     if (packageId) search.set("package", packageId);
     router.push(`/ideas/${ideaId}/workspace?${search}`, { scroll: false });
   };
@@ -292,14 +235,22 @@ export function WorkspaceView() {
         })
       ).data,
     onSuccess: async (result, change) => {
-      await queryClient.invalidateQueries({ queryKey: key });
-      await queryClient.invalidateQueries({ queryKey: ["workspaces"] });
+      await client.invalidateQueries({ queryKey: key });
+      await client.invalidateQueries({ queryKey: ["workspaces"] });
       setNotice("Guardado");
-      if (change.selectCreated && result.id)
+      if (change.selectCreated && result.id) {
+        if (change.path.endsWith("/packages")) setEditingId(result.id);
         select(
           change.path.endsWith("/projects") ? result.id : project!.id,
           change.path.endsWith("/packages") ? result.id : undefined,
         );
+      }
+      if (
+        change.method === "delete" &&
+        selected &&
+        change.path.endsWith(`/${selected.id}`)
+      )
+        select(project!.id, selected.parentId ?? undefined);
     },
   });
   const change = async (value: Change) => {
@@ -308,7 +259,7 @@ export function WorkspaceView() {
       await mutation.mutateAsync(value);
       return true;
     } catch {
-      return false; // The shared error message keeps failed drafts available for retry.
+      return false;
     }
   };
   const pending = mutation.isPending;
@@ -319,79 +270,374 @@ export function WorkspaceView() {
   if (query.isLoading || !isAuthenticated)
     return (
       <p className="p-8" role="status">
-        Cargando espacio de trabajo...
+        Cargando espacio de trabajo…
       </p>
     );
   if (!data || query.isError)
     return (
-      <div className="mx-auto max-w-lg p-8 flex flex-col gap-4">
+      <div className="mx-auto max-w-lg p-8 space-y-4">
         <h1 className="text-xl font-semibold">No pudimos abrir este espacio</h1>
-        <p>
-          El espacio es privado para los miembros activos de la idea. Comprueba
-          tu conexión y tu membresía.
-        </p>
+        <p>Comprueba tu conexión y que sigues siendo miembro de la idea.</p>
         <Button onClick={() => query.refetch()}>Reintentar</Button>
-        <Link href="/workspace" className="underline">
+        <Link href="/workspace" className="block underline">
           Volver a mis espacios
         </Link>
       </div>
     );
-
+  const children = deleteNode
+    ? (project?.packages.filter((node) => node.parentId === deleteNode.id)
+        .length ?? 0)
+    : 0;
   return (
-    <div className="mx-auto max-w-7xl p-4 py-6 flex flex-col gap-5">
-      <nav
-        aria-label="Ubicación"
-        className="flex flex-wrap gap-2 text-sm text-muted-foreground"
-      >
-        <Link href="/workspace" className="hover:underline">
-          Mis espacios
-        </Link>
+    <div className="edt-workspace mx-auto max-w-[1600px] px-4 py-6 sm:px-6">
+      <nav className="edt-breadcrumb" aria-label="Ubicación">
+        <Link href="/workspace">Mis espacios</Link>
         <span>/</span>
-        <Link href={`/ideas/${ideaId}`} className="hover:underline">
-          {data.idea.title}
-        </Link>
-        <span>/ Espacio de trabajo</span>
+        <Link href={`/ideas/${ideaId}`}>{data.idea.title}</Link>
       </nav>
-      <header className="flex flex-wrap items-start justify-between gap-3">
+      <header className="edt-header">
         <div>
-          <h1 className="text-2xl font-semibold">{data.idea.title}</h1>
-          <p className="text-sm text-muted-foreground">
-            Organiza los proyectos de la idea en secciones, entregables y
-            subentregables.
-          </p>
+          <p className="edt-eyebrow">Espacio de trabajo</p>
+          <h1>{data.idea.title}</h1>
         </div>
-        <Button asChild variant="outline">
-          <Link href={`/chat/team/${ideaId}`}>Chat del equipo</Link>
-        </Button>
+        <div className="edt-header-actions">
+          <Button asChild variant="ghost" size="sm">
+            <Link href={`/chat/team/${ideaId}`}>Chat del equipo</Link>
+          </Button>
+          <span className="text-xs text-muted-foreground">
+            {data.members.length} miembros
+          </span>
+        </div>
       </header>
-      <details className="rounded-xl border p-4">
-        <summary className="cursor-pointer text-sm font-medium">
-          Equipo · {data.members.length} personas ·{" "}
-          {data.canEdit ? "Eres owner" : "Eres miembro"}
-        </summary>
-        <p className="my-3 text-xs text-muted-foreground">
-          Los owners editan los proyectos y el EDT. Cada miembro escribe sus
-          comentarios. Solo el owner original puede nombrar otros owners.
+      <nav className="edt-projects" aria-label="Proyectos de la idea">
+        {data.projects.map((p) => (
+          <button
+            className="edt-project-tab"
+            key={p.id}
+            aria-current={p.id === project?.id ? "page" : undefined}
+            onClick={() => {
+              setEditingId(undefined);
+              select(p.id);
+            }}
+          >
+            {p.title}
+          </button>
+        ))}
+        {data.canEdit && (
+          <button
+            className="edt-project-tab flex items-center gap-1 text-muted-foreground"
+            onClick={() => setShowProjectForm((v) => !v)}
+            aria-expanded={showProjectForm}
+          >
+            <Plus size={14} />
+            Proyecto
+          </button>
+        )}
+      </nav>
+      {data.canEdit && (showProjectForm || !project) && (
+        <div className="mb-5 max-w-lg">
+          <TitleForm
+            label="Nombre del nuevo proyecto"
+            pending={pending}
+            submit={(title) =>
+              change({
+                method: "post",
+                path: `/workspace/${ideaId}/projects`,
+                data: { title },
+                selectCreated: true,
+              })
+            }
+          />
+        </div>
+      )}
+      {!project && (
+        <p className="py-12 text-sm text-muted-foreground">
+          Todavía no hay proyectos en esta idea.
         </p>
-        <div className="flex flex-wrap gap-3">
+      )}
+      {project && (
+        <>
+          <div className="edt-toolbar">
+            <h2>
+              {project.title}
+              <span className="ml-2 text-xs font-normal text-muted-foreground">
+                EDT
+              </span>
+            </h2>
+            <div className="edt-toolbar-actions">
+              <div className="edt-view-switch" aria-label="Vista del EDT">
+                <button
+                  aria-pressed={mode === "map"}
+                  onClick={() => {
+                    setEditingId(undefined);
+                    select(project.id, selected?.id, "map");
+                  }}
+                >
+                  <Network size={14} />
+                  Map
+                </button>
+                <button
+                  aria-pressed={mode === "outline"}
+                  onClick={() => {
+                    setEditingId(undefined);
+                    select(project.id, selected?.id, "outline");
+                  }}
+                >
+                  <ListTree size={14} />
+                  Outline
+                </button>
+              </div>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => setShowComments((v) => !v)}
+                aria-expanded={showComments}
+                title={
+                  showComments ? "Ocultar comentarios" : "Mostrar comentarios"
+                }
+              >
+                <MessageSquare size={14} />
+                <span className="hidden sm:inline">
+                  {showComments ? "Ocultar comentarios" : "Mostrar comentarios"}
+                </span>
+              </Button>
+              {selected && (
+                <Button
+                  className="xl:hidden"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() =>
+                    detailRef.current?.scrollIntoView({
+                      behavior: "smooth",
+                      block: "start",
+                    })
+                  }
+                >
+                  Detalles
+                </Button>
+              )}
+            </div>
+          </div>
+          <div className={`edt-work-grid ${selected ? "has-selection" : ""}`}>
+            <EdtBoard
+              key={project.id}
+              title={project.title}
+              packages={project.packages}
+              members={data.members}
+              mode={mode}
+              selectedId={selected?.id}
+              editingId={editingId}
+              canEdit={data.canEdit}
+              pending={pending}
+              onSelect={(id) => select(project.id, id)}
+              onRename={(id, title) =>
+                change({
+                  method: "patch",
+                  path: `${base}/packages/${id}`,
+                  data: { title },
+                })
+              }
+              onAdd={(parentId) => {
+                void change({
+                  method: "post",
+                  path: `${base}/packages`,
+                  data: {
+                    title: parentId ? "Nuevo paquete" : "Nueva sección",
+                    parentId,
+                  },
+                  selectCreated: true,
+                });
+              }}
+              onDelete={setDeleteNode}
+              onMove={(id, position) => {
+                void change({
+                  method: "patch",
+                  path: `${base}/packages/${id}`,
+                  data: position,
+                });
+              }}
+            />
+            {selected && (
+              <aside
+                className="edt-inspector scroll-mt-20"
+                ref={detailRef}
+                aria-label="Detalles del paquete"
+              >
+                <div className="edt-inspector-header">
+                  <span>Paquete {selected.number}</span>
+                  <button
+                    className="edt-inspector-close"
+                    aria-label="Cerrar detalles"
+                    onClick={() => select(project.id)}
+                  >
+                    <X size={15} />
+                  </button>
+                </div>
+                <h3>{selected.title}</h3>
+                {data.canEdit ? (
+                  <PackageDetails
+                    key={`${selected.id}:${selected.updatedAt}`}
+                    node={selected}
+                    members={data.members}
+                    pending={pending}
+                    save={(values) =>
+                      change({
+                        method: "patch",
+                        path: `${base}/packages/${selected.id}`,
+                        data: values,
+                      })
+                    }
+                  />
+                ) : (
+                  <div className="edt-field">
+                    <span>Jefe</span>
+                    <p>
+                      {data.members.find((m) => m.id === selected.leaderId)
+                        ?.name ?? "Sin asignar"}
+                    </p>
+                    <span>Fecha límite</span>
+                    <p>{deadlineLabel(selected.effectiveDeadline)}</p>
+                  </div>
+                )}
+                {(selected.status === "AT_RISK" ||
+                  selected.status === "DELAYED") && (
+                  <p
+                    className={`edt-deadline-alert ${PACKAGE_STATES[selected.status].color}`}
+                  >
+                    {selected.status === "DELAYED"
+                      ? "La fecha límite de este paquete ya pasó."
+                      : "Este paquete vence dentro de las próximas 72 horas."}
+                    <br />
+                    {deadlineLabel(selected.effectiveDeadline)} · Perú
+                  </p>
+                )}
+                {selected.leaderId === userId && (
+                  <div className="edt-progress">
+                    <p>
+                      {PACKAGE_STATES[selected.status].label} · Tú eres el jefe
+                      de este paquete.
+                    </p>
+                    {selected.progress !== "ON_TRACK" && (
+                      <Button
+                        variant="outline"
+                        disabled={pending || !selected.effectiveDeadline}
+                        onClick={() =>
+                          change({
+                            method: "patch",
+                            path: `${base}/packages/${selected.id}/progress`,
+                            data: { status: "ON_TRACK" },
+                          })
+                        }
+                      >
+                        {selected.progress === "DONE"
+                          ? "Volver a iniciar"
+                          : "Iniciar paquete"}
+                      </Button>
+                    )}
+                    {!selected.effectiveDeadline && (
+                      <p>Necesita una fecha límite para iniciar.</p>
+                    )}
+                    {selected.progress !== "DONE" && (
+                      <Button
+                        variant="outline"
+                        disabled={pending}
+                        onClick={() =>
+                          change({
+                            method: "patch",
+                            path: `${base}/packages/${selected.id}/progress`,
+                            data: { status: "DONE" },
+                          })
+                        }
+                      >
+                        Marcar como terminado
+                      </Button>
+                    )}
+                  </div>
+                )}
+                {showComments && (
+                  <section aria-label="Comentarios del equipo">
+                    <h4 className="edt-comments-heading">Notas del equipo</h4>
+                    {data.members.map((member) => (
+                      <MemberNote
+                        key={`${selected.id}:${member.id}`}
+                        member={member}
+                        content={
+                          selected.notes.find(
+                            (note) => note.userId === member.id,
+                          )?.content ?? ""
+                        }
+                        editable={member.id === userId}
+                        pending={pending}
+                        save={(content) => {
+                          void change({
+                            method: "put",
+                            path: `${base}/packages/${selected.id}/note`,
+                            data: { content },
+                          });
+                        }}
+                      />
+                    ))}
+                  </section>
+                )}
+              </aside>
+            )}
+          </div>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="edt-legend" aria-label="Leyenda de estados">
+              {Object.entries(PACKAGE_STATES).map(([state, value]) => (
+                <span key={state} className={value.color}>
+                  <i />
+                  {value.short}
+                </span>
+              ))}
+            </div>
+            <div
+              className={`edt-feedback ${mutation.isError ? "edt-feedback-error" : ""}`}
+              role={mutation.isError ? "alert" : "status"}
+            >
+              {mutation.isError ? (
+                typeof error === "string" ? (
+                  error
+                ) : (
+                  "No se pudo guardar. Vuelve a intentarlo."
+                )
+              ) : pending ? (
+                "Guardando…"
+              ) : notice ? (
+                <>
+                  <Check size={12} />
+                  {notice}
+                </>
+              ) : (
+                ""
+              )}
+            </div>
+          </div>
+        </>
+      )}
+      <details className="edt-team">
+        <summary className="cursor-pointer">
+          Equipo y permisos · {data.canEdit ? "Owner" : "Miembro"}
+        </summary>
+        <div className="mt-4 flex flex-wrap gap-3">
           {data.members.map((member) => (
             <div
+              className="flex items-center gap-2 border-l pl-3 py-1"
               key={member.id}
-              className="flex items-center gap-3 rounded-lg bg-muted p-3 text-sm"
             >
-              <span>
+              <div>
                 {member.name ?? "Miembro"}
-                <span className="block text-xs text-muted-foreground">
+                <span className="block text-[10px] text-muted-foreground">
                   {member.id === data.idea.founderId
                     ? "Owner original"
                     : member.isOwner
                       ? "Owner"
                       : "Miembro"}
                 </span>
-              </span>
+              </div>
               {data.isOriginalOwner && member.id !== data.idea.founderId && (
                 <Button
-                  variant="outline"
+                  variant="ghost"
                   size="sm"
                   disabled={pending}
                   onClick={() =>
@@ -409,456 +655,76 @@ export function WorkspaceView() {
           ))}
         </div>
       </details>
-      <section className="rounded-xl border p-4 flex flex-col gap-3">
-        <div className="flex flex-wrap items-center gap-3">
-          <h2 className="font-semibold">Proyectos</h2>
-          <p className="text-sm text-muted-foreground">
-            Por ejemplo: desarrollo de software o campaña de lanzamiento.
-          </p>
-        </div>
-        <nav aria-label="Proyectos de la idea" className="flex flex-wrap gap-2">
-          {data.projects.map((p) => (
+      {project && data.canEdit && (
+        <details className="edt-team">
+          <summary className="cursor-pointer">Ajustes del proyecto</summary>
+          <div className="mt-4 max-w-lg space-y-3">
+            <TitleForm
+              key={`${project.id}:${project.title}`}
+              initial={project.title}
+              label="Nombre del proyecto"
+              pending={pending}
+              submit={(title) =>
+                change({ method: "patch", path: base, data: { title } })
+              }
+            />
             <Button
-              key={p.id}
-              variant={p.id === project?.id ? "default" : "outline"}
-              className="max-w-full whitespace-normal h-auto min-h-9 py-2 text-left"
-              aria-current={p.id === project?.id ? "page" : undefined}
-              onClick={() => select(p.id)}
-            >
-              {p.title}
-            </Button>
-          ))}
-        </nav>
-        {data.canEdit && (
-          <TitleForm
-            label="Nombre del nuevo proyecto"
-            pending={pending}
-            submit={(title) =>
-              change({
-                method: "post",
-                path: `/workspace/${ideaId}/projects`,
-                data: { title },
-                selectCreated: true,
-              })
-            }
-          />
-        )}
-        {!project && (
-          <p className="text-sm text-muted-foreground">
-            Todavía no hay proyectos.{" "}
-            {data.canEdit
-              ? "Crea el primero para empezar su EDT."
-              : "Un owner puede crear el primer proyecto."}
-          </p>
-        )}
-      </section>
-      {mutation.isError && (
-        <p
-          role="alert"
-          className="rounded-lg border border-destructive p-3 text-sm text-destructive"
-        >
-          {typeof error === "string"
-            ? error
-            : "No se pudo guardar. Revisa tu conexión o permisos y vuelve a intentarlo."}
-        </p>
-      )}
-      {notice && (
-        <p role="status" className="text-sm text-muted-foreground">
-          {notice}
-        </p>
-      )}
-      {project && (
-        <>
-          <div className="flex flex-wrap justify-between gap-3">
-            <div>
-              <h2 className="text-xl font-semibold">{project.title} · EDT</h2>
-              <p className="text-sm text-muted-foreground">
-                Selecciona un paquete para ver sus detalles. La numeración se
-                actualiza sola.
-              </p>
-            </div>
-            <Button
-              variant="outline"
-              onClick={() => setShowComments((value) => !value)}
-              aria-expanded={showComments}
-            >
-              <MessageSquare size={16} />
-              {showComments ? "Ocultar comentarios" : "Mostrar comentarios"}
-            </Button>
-          </div>
-          <p className="text-xs text-muted-foreground">
-            El jefe inicia y termina su paquete. En progreso: naranja cuando
-            faltan 3 días o menos; rojo después de la fecha límite (hora de
-            Perú).
-          </p>
-          <div aria-label="Leyenda de estados" className="flex flex-wrap gap-2">
-            {Object.entries(PACKAGE_STATES).map(([state, value]) => (
-              <span
-                key={state}
-                className={`rounded-md border px-2 py-1 text-xs ${value.color}`}
-              >
-                {value.label}
-              </span>
-            ))}
-          </div>
-          <div className="grid items-start gap-5 xl:grid-cols-[minmax(0,1fr)_360px]">
-            <section
-              aria-label="EDT"
-              ref={treeRef}
-              className="scroll-mt-20 min-w-0 rounded-xl border p-3 sm:p-4 flex flex-col gap-3"
-            >
-              {data.canEdit && (
-                <TitleForm
-                  label="Nueva sección del EDT"
-                  pending={pending}
-                  submit={(title) =>
-                    change({
-                      method: "post",
-                      path: `${base}/packages`,
-                      data: { title },
-                      selectCreated: true,
-                    })
-                  }
-                />
-              )}
-              {project.packages.length === 0 && (
-                <p className="p-8 text-center text-muted-foreground">
-                  El EDT está vacío.{" "}
-                  {data.canEdit
-                    ? "Crea una sección y añade sus entregables."
-                    : "Un owner puede añadir secciones y entregables."}
-                </p>
-              )}
-              {project.packages
-                .filter(
-                  (node) =>
-                    !project.packages.some(
-                      (parent) =>
-                        collapsed.has(parent.id) &&
-                        node.number.startsWith(`${parent.number}.`),
-                    ),
+              variant="destructive"
+              disabled={pending}
+              onClick={() => {
+                if (
+                  confirm(
+                    `¿Eliminar el proyecto «${project.title}» y todo su EDT?`,
+                  )
                 )
-                .map((node) => {
-                  const leader = data.members.find(
-                    (m) => m.id === node.leaderId,
-                  );
-                  const depth = node.number.split(".").length - 1;
-                  return (
-                    <div
-                      key={node.id}
-                      className="flex items-stretch gap-1"
-                      style={{ marginLeft: `${Math.min(depth, 5) * 12}px` }}
-                    >
-                      {!node.isLeaf && (
-                        <button
-                          className="shrink-0 px-1"
-                          aria-label={`${collapsed.has(node.id) ? "Expandir" : "Contraer"} ${node.number}`}
-                          aria-expanded={!collapsed.has(node.id)}
-                          onClick={() =>
-                            setCollapsed((previous) => {
-                              const next = new Set(previous);
-                              if (next.has(node.id)) next.delete(node.id);
-                              else next.add(node.id);
-                              return next;
-                            })
-                          }
-                        >
-                          {collapsed.has(node.id) ? (
-                            <ChevronRight size={16} />
-                          ) : (
-                            <ChevronDown size={16} />
-                          )}
-                        </button>
-                      )}
-                      <button
-                        onClick={() => select(project.id, node.id)}
-                        aria-pressed={selected?.id === node.id}
-                        className={`min-w-0 flex-1 rounded-lg border-l-4 border p-3 text-left transition-shadow hover:shadow-md ${PACKAGE_STATES[node.status].color} ${selected?.id === node.id ? "ring-2 ring-primary ring-offset-2" : ""}`}
-                      >
-                        <span className="block font-medium break-words">
-                          <span className="mr-2 text-muted-foreground">
-                            {node.number}
-                          </span>
-                          {node.title}
-                        </span>
-                        <span className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-xs">
-                          <span>{PACKAGE_STATES[node.status].label}</span>
-                          <span>
-                            Jefe:{" "}
-                            {leader?.name ??
-                              (node.leaderId
-                                ? "Miembro anterior"
-                                : "Sin asignar")}
-                          </span>
-                          <span>
-                            {deadlineLabel(node.effectiveDeadline)}
-                            {!node.isLeaf && " · calculada"}
-                          </span>
-                        </span>
-                      </button>
-                    </div>
-                  );
-                })}
-            </section>
-            <aside
-              ref={detailRef}
-              className="scroll-mt-20 min-w-0 rounded-xl border p-4 flex flex-col gap-4"
-              aria-label="Detalles del paquete"
+                  void change({ method: "delete", path: base });
+              }}
             >
-              {selected && (
-                <Button
-                  className="xl:hidden self-start"
-                  variant="outline"
-                  onClick={() =>
-                    treeRef.current?.scrollIntoView({
-                      behavior: "smooth",
-                      block: "start",
-                    })
-                  }
-                >
-                  ← Volver al EDT
-                </Button>
-              )}
-              {!selected ? (
-                <p className="text-sm text-muted-foreground">
-                  Selecciona un cuadro del EDT para ver el responsable, la fecha
-                  y los comentarios del equipo.
-                </p>
-              ) : (
-                <>
-                  <h3 className="font-semibold break-words">
-                    {selected.number} {selected.title}
-                  </h3>
-                  <p className="text-sm">
-                    {PACKAGE_STATES[selected.status].label}
-                  </p>
-                  {selected.leaderId === userId && (
-                    <div className="flex flex-col gap-2 rounded-lg bg-muted p-3">
-                      <p className="text-xs">
-                        Eres jefe de este paquete. Solo tú puedes iniciarlo o
-                        marcarlo como terminado.
-                      </p>
-                      {selected.progress !== "ON_TRACK" && (
-                        <Button
-                          disabled={pending || !selected.effectiveDeadline}
-                          onClick={() =>
-                            change({
-                              method: "patch",
-                              path: `${base}/packages/${selected.id}/progress`,
-                              data: { status: "ON_TRACK" },
-                            })
-                          }
-                        >
-                          {selected.progress === "DONE"
-                            ? "Volver a iniciar"
-                            : "Iniciar paquete"}
-                        </Button>
-                      )}
-                      {!selected.effectiveDeadline && (
-                        <p className="text-xs">
-                          Un owner debe asignar una fecha límite antes de
-                          iniciarlo.
-                        </p>
-                      )}
-                      {selected.progress !== "DONE" && (
-                        <Button
-                          variant="outline"
-                          disabled={pending}
-                          onClick={() =>
-                            change({
-                              method: "patch",
-                              path: `${base}/packages/${selected.id}/progress`,
-                              data: { status: "DONE" },
-                            })
-                          }
-                        >
-                          Marcar como terminado
-                        </Button>
-                      )}
-                    </div>
-                  )}
-                  {data.canEdit ? (
-                    <PackageEditor
-                      key={`${selected.id}:${selected.updatedAt}`}
-                      node={selected}
-                      project={project}
-                      members={data.members}
-                      pending={pending}
-                      save={(values) =>
-                        change({
-                          method: "patch",
-                          path: `${base}/packages/${selected.id}`,
-                          data: values,
-                        })
-                      }
-                    />
-                  ) : (
-                    <div className="text-sm flex flex-col gap-2">
-                      <p>
-                        Jefe:{" "}
-                        {data.members.find((m) => m.id === selected.leaderId)
-                          ?.name ?? "Sin asignar"}
-                      </p>
-                      <p>
-                        Fecha límite:{" "}
-                        {deadlineLabel(selected.effectiveDeadline)}
-                        {!selected.isLeaf && " (calculada)"}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        Solo los owners pueden editar este paquete.
-                      </p>
-                    </div>
-                  )}
-                  {data.canEdit && (
-                    <div className="border-t pt-4 flex flex-col gap-3">
-                      <p className="text-sm font-medium">
-                        <Plus className="inline size-4" /> Añadir subentregable
-                      </p>
-                      <TitleForm
-                        key={selected.id}
-                        label="Nombre del subentregable"
-                        pending={pending}
-                        submit={(title) =>
-                          change({
-                            method: "post",
-                            path: `${base}/packages`,
-                            data: { title, parentId: selected.id },
-                            selectCreated: true,
-                          })
-                        }
-                      />
-                      <p className="text-xs text-muted-foreground">
-                        Al dividir una hoja con fecha, su primer subentregable
-                        hereda esa fecha.
-                      </p>
-                      <div className="flex flex-wrap gap-2">
-                        <Button
-                          variant="outline"
-                          disabled={pending || selected.position === 0}
-                          onClick={() =>
-                            change({
-                              method: "patch",
-                              path: `${base}/packages/${selected.id}`,
-                              data: { position: selected.position - 1 },
-                            })
-                          }
-                        >
-                          <ArrowUp size={16} />
-                          Subir
-                        </Button>
-                        <Button
-                          variant="outline"
-                          disabled={
-                            pending ||
-                            !project.packages.some(
-                              (p) =>
-                                p.parentId === selected.parentId &&
-                                p.position > selected.position,
-                            )
-                          }
-                          onClick={() =>
-                            change({
-                              method: "patch",
-                              path: `${base}/packages/${selected.id}`,
-                              data: { position: selected.position + 1 },
-                            })
-                          }
-                        >
-                          <ArrowDown size={16} />
-                          Bajar
-                        </Button>
-                        <Button
-                          variant="destructive"
-                          disabled={pending}
-                          onClick={() => {
-                            if (
-                              confirm(
-                                `¿Eliminar «${selected.title}», sus subentregables y comentarios?`,
-                              )
-                            )
-                              change({
-                                method: "delete",
-                                path: `${base}/packages/${selected.id}`,
-                              });
-                          }}
-                        >
-                          Eliminar paquete
-                        </Button>
-                      </div>
-                    </div>
-                  )}
-                  {showComments && (
-                    <section
-                      aria-label="Comentarios del equipo"
-                      className="border-t pt-4 flex flex-col gap-3"
-                    >
-                      <h4 className="font-medium">Comentarios del equipo</h4>
-                      <p className="text-xs text-muted-foreground">
-                        Una caja por persona. Solo texto plano; cada miembro
-                        edita su propia caja.
-                      </p>
-                      {data.members.map((member) => {
-                        const note = selected.notes.find(
-                          (n) => n.userId === member.id,
-                        );
-                        return (
-                          <MemberNote
-                            key={`${selected.id}:${member.id}`}
-                            member={member}
-                            content={note?.content ?? ""}
-                            editable={member.id === userId}
-                            pending={pending}
-                            save={(content) =>
-                              change({
-                                method: "put",
-                                path: `${base}/packages/${selected.id}/note`,
-                                data: { content },
-                              })
-                            }
-                          />
-                        );
-                      })}
-                    </section>
-                  )}
-                </>
-              )}
-            </aside>
+              Eliminar proyecto
+            </Button>
           </div>
-          {data.canEdit && (
-            <details className="rounded-lg border p-4">
-              <summary className="cursor-pointer text-sm">
-                Ajustes del proyecto
-              </summary>
-              <div className="mt-3 flex flex-col gap-3">
-                <TitleForm
-                  key={`${project.id}:${project.title}`}
-                  initial={project.title}
-                  label="Nombre del proyecto"
-                  pending={pending}
-                  submit={(title) =>
-                    change({ method: "patch", path: base, data: { title } })
-                  }
-                />
+        </details>
+      )}
+      <AlertDialog.Root
+        open={!!deleteNode}
+        onOpenChange={(open) => {
+          if (!open) setDeleteNode(null);
+        }}
+      >
+        <AlertDialog.Portal>
+          <AlertDialog.Overlay className="fixed inset-0 z-50 bg-black/25" />
+          <AlertDialog.Content className="fixed left-1/2 top-1/2 z-50 w-[calc(100%-32px)] max-w-md -translate-x-1/2 -translate-y-1/2 rounded-lg border bg-background p-6 shadow-xl">
+            <AlertDialog.Title className="text-lg font-semibold">
+              Eliminar «{deleteNode?.title}»
+            </AlertDialog.Title>
+            <AlertDialog.Description className="mt-3 text-sm leading-relaxed text-muted-foreground">
+              {children
+                ? `Sus ${children} subpaquete${children === 1 ? "" : "s"} subirán un nivel, conservando sus fechas, responsables y notas.`
+                : "Este paquete no tiene hijos."}{" "}
+              Solo se eliminarán este cuadro y sus propias notas.
+            </AlertDialog.Description>
+            <div className="mt-6 flex justify-end gap-2">
+              <AlertDialog.Cancel asChild>
+                <Button variant="outline">Cancelar</Button>
+              </AlertDialog.Cancel>
+              <AlertDialog.Action asChild>
                 <Button
                   variant="destructive"
-                  className="self-start"
-                  disabled={pending}
                   onClick={() => {
-                    if (
-                      confirm(
-                        `¿Eliminar el proyecto «${project.title}» y todo su EDT?`,
-                      )
-                    )
-                      change({ method: "delete", path: base });
+                    if (deleteNode)
+                      void change({
+                        method: "delete",
+                        path: `${base}/packages/${deleteNode.id}`,
+                      });
                   }}
                 >
-                  Eliminar proyecto
+                  Eliminar paquete
                 </Button>
-              </div>
-            </details>
-          )}
-        </>
-      )}
+              </AlertDialog.Action>
+            </div>
+          </AlertDialog.Content>
+        </AlertDialog.Portal>
+      </AlertDialog.Root>
     </div>
   );
 }

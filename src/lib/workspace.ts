@@ -1,21 +1,17 @@
 export const PACKAGE_STATES = {
-  NOT_STARTED: { label: "No empezado", color: "bg-background border-border" },
-  ON_TRACK: {
-    label: "En camino",
-    color: "bg-green-50 border-green-500 dark:bg-green-950",
+  NOT_STARTED: {
+    label: "Sin iniciar",
+    short: "Sin iniciar",
+    color: "edt-idle",
   },
+  ON_TRACK: { label: "En camino", short: "En camino", color: "edt-on-track" },
   AT_RISK: {
     label: "Posiblemente retrasado",
-    color: "bg-orange-50 border-orange-500 dark:bg-orange-950",
+    short: "Vence pronto",
+    color: "edt-at-risk",
   },
-  DELAYED: {
-    label: "Muy retrasado",
-    color: "bg-red-50 border-red-500 dark:bg-red-950",
-  },
-  DONE: {
-    label: "Terminado",
-    color: "bg-blue-50 border-blue-500 dark:bg-blue-950",
-  },
+  DELAYED: { label: "Muy retrasado", short: "Vencido", color: "edt-delayed" },
+  DONE: { label: "Terminado", short: "Terminado", color: "edt-done" },
 } as const;
 export type PackageState = keyof typeof PACKAGE_STATES;
 export interface WorkspaceMember {
@@ -53,10 +49,26 @@ export interface Workspace {
 }
 export function deadlineLabel(date: string | null) {
   return date
-    ? new Date(`${date.slice(0, 10)}T12:00:00`).toLocaleDateString("es-PE", {
+    ? new Date(
+        date.length === 10 ? `${date}T23:59:59-05:00` : date,
+      ).toLocaleString("es-PE", {
+        timeZone: "America/Lima",
         day: "numeric",
         month: "short",
-        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: false,
       })
     : "Sin fecha";
+}
+/** Date/time controls use Peru time, independent of the viewer's timezone. */
+export function deadlineInput(date: string | null) {
+  return date
+    ? new Date(new Date(date).getTime() - 5 * 3600000)
+        .toISOString()
+        .slice(0, 16)
+    : "";
+}
+export function deadlineInstant(value: string) {
+  return value ? new Date(`${value}:00-05:00`).toISOString() : null;
 }
