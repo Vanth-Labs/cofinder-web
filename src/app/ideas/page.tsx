@@ -20,7 +20,7 @@ export default function ProjectsPage() {
   const [category, setCategory] = useState<string | null>(null);
   const [sort, setSort] = useState<'recommended' | 'recent'>('recommended');
 
-  const { data: projects = [], isLoading } = useQuery<Project[]>({
+  const { data: projects = [], isLoading, isError, refetch } = useQuery<Project[]>({
     queryKey: ['projects', debounced, stage, category, sort],
     queryFn: async () => {
       const params = new URLSearchParams();
@@ -122,7 +122,14 @@ export default function ProjectsPage() {
 
         {isLoading && <p className="text-muted-foreground text-sm">Cargando ideas...</p>}
 
-        {!isLoading && projects.length === 0 && (
+        {isError && (
+          <div role="alert" className="flex flex-col items-center gap-3 py-8 text-center">
+            <p>No pudimos cargar las ideas. Intenta de nuevo.</p>
+            <Button variant="outline" onClick={() => refetch()}>Reintentar</Button>
+          </div>
+        )}
+
+        {!isLoading && !isError && projects.length === 0 && (
           <div className="text-center py-16 flex flex-col items-center gap-3">
             <p className="text-muted-foreground text-sm">No hay ideas con esos filtros.</p>
             <Button asChild variant="outline" size="sm">

@@ -215,7 +215,7 @@ export default function ProjectDetailPage() {
   const queryClient = useQueryClient();
   const [showApply, setShowApply] = useState(false);
 
-  const { data: project, isLoading } = useQuery<Project>({
+  const { data: project, isLoading, isError, refetch } = useQuery<Project>({
     queryKey: ['project', projectId],
     queryFn: async () => {
       const { data } = await api.get(`/ideas/${projectId}`);
@@ -261,10 +261,20 @@ export default function ProjectDetailPage() {
     },
   });
 
-  if (!hasHydrated || !isAuthenticated || isLoading || !project) {
+  if (!hasHydrated || !isAuthenticated || isLoading) {
     return (
       <main className="min-h-screen flex items-center justify-center">
         <p className="text-muted-foreground text-sm">Cargando...</p>
+      </main>
+    );
+  }
+
+  if (isError || !project) {
+    return (
+      <main className="min-h-screen flex flex-col items-center justify-center gap-4 px-4 text-center">
+        <p role="alert">No pudimos cargar esta idea. Intenta de nuevo.</p>
+        <Button variant="outline" onClick={() => refetch()}>Reintentar</Button>
+        <Link href="/ideas" className="underline">Volver a explorar ideas</Link>
       </main>
     );
   }

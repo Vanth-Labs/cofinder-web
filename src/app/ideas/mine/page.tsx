@@ -328,7 +328,7 @@ function ProjectCard({ project }: { project: MyProject }) {
 export default function MyProjectsPage() {
   const { hasHydrated, isAuthenticated } = useRequireAuth();
 
-  const { data: projects = [], isLoading } = useQuery<MyProject[]>({
+  const { data: projects = [], isLoading, isError, refetch } = useQuery<MyProject[]>({
     queryKey: ['my-projects'],
     queryFn: async () => {
       const { data } = await api.get('/ideas/mine');
@@ -358,7 +358,14 @@ export default function MyProjectsPage() {
 
         {isLoading && <p className="text-muted-foreground text-sm">Cargando...</p>}
 
-        {!isLoading && projects.length === 0 && (
+        {isError && (
+          <div role="alert" className="flex flex-col items-center gap-3 py-8 text-center">
+            <p>No pudimos cargar tus ideas. Intenta de nuevo.</p>
+            <Button variant="outline" onClick={() => refetch()}>Reintentar</Button>
+          </div>
+        )}
+
+        {!isLoading && !isError && projects.length === 0 && (
           <p className="text-muted-foreground text-sm py-8 text-center">
             No tienes ninguna idea publicada todavía.
           </p>
