@@ -1,6 +1,8 @@
 # cofinder-web
 
-Frontend de **CoFinder** — la plataforma tipo Tinder para encontrar cofounders en la comunidad PUCP. Construido con Next.js 15 App Router.
+Frontend de **CoFinder by VanthLabs** — la plataforma tipo Tinder para encontrar cofounders en la comunidad PUCP. Construido con Next.js 16 App Router.
+
+Dominio de producción previsto: [cofinder.vanthlabs.org](https://cofinder.vanthlabs.org).
 
 ---
 
@@ -8,7 +10,7 @@ Frontend de **CoFinder** — la plataforma tipo Tinder para encontrar cofounders
 
 | Capa | Tecnología |
 |------|-----------|
-| Framework | Next.js 15 (App Router) |
+| Framework | Next.js 16 (App Router) |
 | Lenguaje | TypeScript 5 |
 | Estilos | Tailwind CSS v4 |
 | Componentes | shadcn/ui (Radix + Nova preset) |
@@ -197,4 +199,29 @@ pnpm dlx shadcn@latest add <componente>
 
 ## Deploy
 
-El proyecto está configurado para desplegarse en **Vercel**. Solo conecta el repo y agrega la variable de entorno `NEXT_PUBLIC_API_URL` apuntando al backend en producción (Railway).
+El frontend se despliega en **Vercel** y la API en **Render**. El repositorio del
+frontend es `Vanth-Labs/cofinder-web`; la API está en `Vanth-Labs/cofinder-api`.
+`NEXT_PUBLIC_API_URL` debe seguir apuntando a la URL HTTPS de la API en Render.
+
+Para activar `https://cofinder.vanthlabs.org`:
+
+1. Comprobar que Vercel y Render tengan acceso a los repositorios en `Vanth-Labs`
+   y que sus proyectos sigan conectados a la rama `main` tras el traslado.
+2. Añadir `cofinder.vanthlabs.org` en los dominios del proyecto existente de
+   Vercel. Crear en el proveedor DNS el CNAME `cofinder` con el destino exacto
+   que indique Vercel y verificar el certificado HTTPS.
+3. En el bucket R2 `cofinder-media`, añadir `https://cofinder.vanthlabs.org` a
+   los orígenes CORS permitidos para las subidas `PUT`, conservando los orígenes,
+   métodos y cabeceras existentes. Cambiar el dominio de la web no requiere
+   mover archivos ni cambiar las claves de almacenamiento o
+   `NEXT_PUBLIC_MEDIA_BASE_URL`.
+4. Una vez disponible el dominio, cambiar `FRONTEND_URL` en Render a
+   `https://cofinder.vanthlabs.org` (sin barra final) y redesplegar la API.
+   Esta variable controla CORS HTTP, sockets, redirección post-login y enlaces
+   enviados por correo. Conservar `CORS_PREVIEW_REGEX` para los previews.
+   `GOOGLE_CALLBACK_URL` permanece en Render mientras no cambie el dominio de
+   la API; comprobar el inicio de sesión completo desde el dominio nuevo.
+5. Verificar la landing, login, chat y una subida de imagen antes de redirigir
+   el dominio anterior de Vercel al nuevo. La sesión y los permisos de
+   notificaciones del navegador pertenecen a cada origen: en el dominio nuevo
+   hay que iniciar sesión y habilitar las notificaciones de nuevo.

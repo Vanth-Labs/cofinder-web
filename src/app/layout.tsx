@@ -9,7 +9,8 @@ import { ShellWrapper } from '@/components/layout/shell-wrapper';
 const geist = Geist({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'CoFinder — Encuentra tu cofounder PUCP',
+  metadataBase: new URL('https://cofinder.vanthlabs.org'),
+  title: 'CoFinder by VanthLabs — Encuentra tu cofounder PUCP',
   description: 'Conecta con estudiantes y alumni de la PUCP para co-emprender',
   manifest: '/manifest.webmanifest',
 };

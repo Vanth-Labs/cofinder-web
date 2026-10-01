@@ -68,7 +68,12 @@ export default function HomePage() {
         <div className="flex flex-col items-center gap-6 text-center">
           <div className="flex flex-col items-center gap-2">
             <CofinderMark className="h-16 w-auto text-foreground" />
-            <h1 className="text-3xl font-semibold tracking-tight">CoFinder</h1>
+            <h1 className="flex flex-col gap-1 text-3xl font-semibold tracking-tight">
+              CoFinder
+              <span className="text-xs font-normal tracking-normal text-muted-foreground">
+                by VanthLabs
+              </span>
+            </h1>
             <p className="text-muted-foreground text-sm max-w-md">
               Publica tu idea, encuentra equipo y únete a proyectos de la comunidad PUCP
             </p>
