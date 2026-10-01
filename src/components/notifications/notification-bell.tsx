@@ -7,6 +7,7 @@ import { io } from 'socket.io-client';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Bell, X } from 'lucide-react';
 import { api } from '@/lib/api';
+import { deadlineLabel } from '@/lib/workspace';
 import { AppNotification } from '@/lib/types';
 import { useAuthStore } from '@/store/auth.store';
 
@@ -18,7 +19,7 @@ function describe(n: AppNotification): { text: string; href: string } {
     case 'PACKAGE_ASSIGNED':
       return { text: `Te asignaron como jefe de ${n.data.packageTitle ?? 'un paquete'}`, href: `/ideas/${n.data.ideaId}/workspace?project=${n.data.workspaceProjectId}&package=${n.data.packageId}` };
     case 'PACKAGE_DEADLINE_CHANGED':
-      return { text: `Fecha límite de ${n.data.packageTitle}: ${n.data.deadline ?? 'sin fecha'}`, href: `/ideas/${n.data.ideaId}/workspace?project=${n.data.workspaceProjectId}&package=${n.data.packageId}` };
+      return { text: `Fecha límite de ${n.data.packageTitle}: ${deadlineLabel(n.data.deadline ?? null)}`, href: `/ideas/${n.data.ideaId}/workspace?project=${n.data.workspaceProjectId}&package=${n.data.packageId}` };
     case 'NEW_MATCH':
       return { text: `${actor} está interesado en ${project}`, href: n.data.matchId ? `/chat/${n.data.matchId}` : '/chat?tab=individual' };
     case 'NEW_APPLICATION':
