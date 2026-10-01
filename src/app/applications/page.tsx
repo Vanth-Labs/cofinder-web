@@ -43,8 +43,8 @@ function MembershipRow({ m }: { m: Membership }) {
       <CardContent className="pt-4 pb-4 flex flex-col gap-3">
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0">
-            <Link href={`/projects/${m.projectId}`} className="font-medium text-sm hover:underline">
-              {m.project?.title ?? 'Proyecto'}
+            <Link href={`/ideas/${m.projectId}`} className="font-medium text-sm hover:underline">
+              {m.project?.title ?? 'Idea'}
             </Link>
             <p className="text-xs text-muted-foreground">
               {m.role}
@@ -146,12 +146,12 @@ function ApplicationsContent() {
         {!isLoading && list.length === 0 && (
           <div className="text-center py-12 flex flex-col items-center gap-3">
             <p className="text-muted-foreground text-sm">
-              {tab === 'applications' && 'No has postulado a ningún proyecto todavía.'}
+              {tab === 'applications' && 'No has postulado a ninguna idea todavía.'}
               {tab === 'invites' && 'No tienes invitaciones pendientes.'}
               {tab === 'teams' && 'Aún no formas parte de ningún equipo.'}
             </p>
             <Button asChild variant="outline" size="sm">
-              <Link href="/projects">Explorar proyectos</Link>
+              <Link href="/ideas">Explorar ideas</Link>
             </Button>
           </div>
         )}

@@ -100,13 +100,13 @@ export function ProfileView() {
       {user.projects?.length > 0 && (
         <div className="flex flex-col gap-2">
           <div className="flex items-center justify-between">
-            <p className="text-sm font-medium">Mis proyectos</p>
-            <Link href="/projects/mine" className="text-xs text-primary hover:underline">
+            <p className="text-sm font-medium">Mis ideas</p>
+            <Link href="/ideas/mine" className="text-xs text-primary hover:underline">
               Gestionar
             </Link>
           </div>
           {user.projects.map((p: { id: string; title: string; stage: string }) => (
-            <Link key={p.id} href={`/projects/${p.id}`}>
+            <Link key={p.id} href={`/ideas/${p.id}`}>
               <Card className="hover:bg-accent/50 transition-colors">
                 <CardContent className="pt-3 pb-3 flex items-center justify-between gap-2">
                   <p className="text-sm font-medium">{p.title}</p>
@@ -123,7 +123,7 @@ export function ProfileView() {
           <p className="text-sm font-medium">Miembro de</p>
           {user.teamMembers.map(
             (tm: { id: string; role: string; project: { id: string; title: string; stage: string } }) => (
-              <Link key={tm.id} href={`/projects/${tm.project.id}`}>
+              <Link key={tm.id} href={`/ideas/${tm.project.id}`}>
                 <Card className="hover:bg-accent/50 transition-colors">
                   <CardContent className="pt-3 pb-3 flex items-center justify-between gap-2">
                     <div>
@@ -144,7 +144,7 @@ export function ProfileView() {
           <Link href="/profile/edit">Editar perfil</Link>
         </Button>
         <Button asChild variant="outline" className="flex-1">
-          <Link href="/projects/mine">Mis proyectos</Link>
+          <Link href="/ideas/mine">Mis ideas</Link>
         </Button>
       </div>
     </div>

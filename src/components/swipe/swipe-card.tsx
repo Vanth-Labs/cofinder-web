@@ -172,7 +172,7 @@ export const SwipeCard = forwardRef<SwipeCardHandle, SwipeCardProps>(function Sw
           {/* Título + badge de stage al lado */}
           <div className="flex items-center gap-2 flex-wrap">
             <Link
-              href={`/projects/${project.id}`}
+              href={`/ideas/${project.id}`}
               onClick={(e) => e.stopPropagation()}
               className="text-white font-bold text-xl leading-tight hover:underline"
             >
@@ -248,7 +248,7 @@ export const SwipeCard = forwardRef<SwipeCardHandle, SwipeCardProps>(function Sw
                 </div>
 
                 <div>
-                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1.5">Sobre el proyecto</p>
+                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1.5">Sobre la idea</p>
                   <p className="text-sm leading-relaxed">{project.description}</p>
                 </div>
 
@@ -314,7 +314,7 @@ export const SwipeCard = forwardRef<SwipeCardHandle, SwipeCardProps>(function Sw
                   </div>
                 )}
 
-                <Link href={`/projects/${project.id}`} onClick={(e) => e.stopPropagation()} className="text-xs text-muted-foreground underline text-center pt-1">
+                <Link href={`/ideas/${project.id}`} onClick={(e) => e.stopPropagation()} className="text-xs text-muted-foreground underline text-center pt-1">
                   Ver página completa
                 </Link>
               </div>

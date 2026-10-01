@@ -65,7 +65,7 @@ export default function NewProjectPage() {
 
   const { mutate, isPending, error } = useMutation({
     mutationFn: async () => {
-      const { data } = await api.post('/projects', {
+      const { data } = await api.post('/ideas', {
         title,
         description,
         stage,
@@ -78,7 +78,7 @@ export default function NewProjectPage() {
       });
       return data;
     },
-    onSuccess: () => router.push('/projects/mine'),
+    onSuccess: () => router.push('/ideas/mine'),
   });
 
   if (!hasHydrated || !isAuthenticated) {
@@ -94,8 +94,8 @@ export default function NewProjectPage() {
       
       <div className="max-w-lg mx-auto px-4 py-8 flex flex-col gap-6">
         <div>
-          <h1 className="text-xl font-semibold">Nuevo proyecto</h1>
-          <p className="text-sm text-muted-foreground">Puedes tener varios proyectos activos.</p>
+          <h1 className="text-xl font-semibold">Nueva idea</h1>
+          <p className="text-sm text-muted-foreground">Puedes tener varias ideas activas.</p>
         </div>
 
         <form
@@ -119,7 +119,7 @@ export default function NewProjectPage() {
           <div className="flex flex-col gap-1.5">
             <Label>Más fotos (opcional)</Label>
             <p className="text-xs text-muted-foreground -mt-1">
-              Se ven en el detalle del proyecto. Hasta {MAX_GALLERY}.
+              Se ven en el detalle de la idea. Hasta {MAX_GALLERY}.
             </p>
             <MultiImageUpload
               value={mediaKeys}
@@ -205,10 +205,10 @@ export default function NewProjectPage() {
             </div>
           </div>
 
-          {error && <p className="text-sm text-destructive">Error al crear el proyecto. Verifica los campos.</p>}
+          {error && <p className="text-sm text-destructive">Error al crear la idea. Verifica los campos.</p>}
 
           <Button type="submit" disabled={isPending || categories.length === 0 || rolesNeeded.length === 0}>
-            {isPending ? 'Creando...' : 'Crear proyecto'}
+            {isPending ? 'Creando...' : 'Crear idea'}
           </Button>
         </form>
       </div>

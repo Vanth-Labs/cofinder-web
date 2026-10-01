@@ -22,7 +22,7 @@ export default function SwipePage() {
   const [infoOpen, setInfoOpen] = useState(false);
 
   /**
-   * Un handle por proyecto, no un único ref para "la de arriba".
+   * Un handle por idea, no un único ref para "la de arriba".
    *
    * Con un solo ref compartido, la card que sale sigue montada mientras dura su
    * animación (AnimatePresence conserva el elemento viejo, con su ref), así que
@@ -48,7 +48,7 @@ export default function SwipePage() {
     },
     onSuccess: (data, variables) => {
       if (variables.direction === 'RIGHT' && data.matched) {
-        const title = feed[currentIndex]?.title ?? 'proyecto';
+        const title = feed[currentIndex]?.title ?? 'idea';
         setMatch({ title, matchId: data.matchId, chatId: data.chatId });
         queryClient.invalidateQueries({ queryKey: ['matches'] });
       }
@@ -84,12 +84,12 @@ export default function SwipePage() {
       <div className="relative flex flex-col items-center justify-center flex-1 md:flex-none md:w-[480px] md:h-full px-4 py-4 gap-3 md:py-8 md:overflow-visible overflow-hidden">
 
         {isLoading && (
-          <p className="text-muted-foreground text-sm">Cargando proyectos...</p>
+          <p className="text-muted-foreground text-sm">Cargando ideas...</p>
         )}
 
         {isEmpty && (
           <div className="text-center flex flex-col gap-4 items-center">
-            <p className="text-muted-foreground text-sm">Has visto todos los proyectos por ahora.</p>
+            <p className="text-muted-foreground text-sm">Has visto todas las ideas por ahora.</p>
             <Button variant="outline" onClick={() => { setCurrentIndex(0); refetch(); }}>
               Ver de nuevo
             </Button>
@@ -172,7 +172,7 @@ export default function SwipePage() {
                   <div className="flex items-center gap-2">
                     <h2 className="font-bold text-base leading-tight">{currentProject.title}</h2>
                     <Link
-                      href={`/projects/${currentProject.id}`}
+                      href={`/ideas/${currentProject.id}`}
                       className="text-muted-foreground hover:text-foreground transition-colors shrink-0"
                     >
                       <ExternalLink className="w-3.5 h-3.5" />
@@ -218,7 +218,7 @@ export default function SwipePage() {
                 {/* Descripción */}
                 <div>
                   <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1.5">
-                    Sobre el proyecto
+                    Sobre la idea
                   </p>
                   <p className="text-sm leading-relaxed text-foreground/80">{currentProject.description}</p>
                 </div>

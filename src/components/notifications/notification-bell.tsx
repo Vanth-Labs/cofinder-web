@@ -12,30 +12,34 @@ import { useAuthStore } from '@/store/auth.store';
 
 function describe(n: AppNotification): { text: string; href: string } {
   const actor = n.data.actorName ?? 'Alguien';
-  const project = n.data.projectTitle ?? 'tu proyecto';
+  const project = n.data.projectTitle ?? 'tu idea';
   const role = n.data.role ? ` como ${n.data.role}` : '';
   switch (n.type) {
+    case 'PACKAGE_ASSIGNED':
+      return { text: `Te asignaron como jefe de ${n.data.packageTitle ?? 'un paquete'}`, href: `/ideas/${n.data.ideaId}/workspace?project=${n.data.workspaceProjectId}&package=${n.data.packageId}` };
+    case 'PACKAGE_DEADLINE_CHANGED':
+      return { text: `Fecha límite de ${n.data.packageTitle}: ${n.data.deadline ?? 'sin fecha'}`, href: `/ideas/${n.data.ideaId}/workspace?project=${n.data.workspaceProjectId}&package=${n.data.packageId}` };
     case 'NEW_MATCH':
-      return { text: `${actor} está interesado en ${project}`, href: '/matches?tab=incoming' };
+      return { text: `${actor} está interesado en ${project}`, href: n.data.matchId ? `/chat/${n.data.matchId}` : '/chat?tab=individual' };
     case 'NEW_APPLICATION':
       return {
         text: `${actor} postuló${role} a ${project}`,
-        href: n.data.projectId ? `/projects/${n.data.projectId}` : '/projects/mine',
+        href: n.data.projectId ? `/ideas/${n.data.projectId}` : '/ideas/mine',
       };
     case 'APPLICATION_ACCEPTED':
-      return { text: `¡Te aceptaron en ${project}! Ya eres parte del equipo`, href: `/projects/${n.data.projectId}` };
+      return { text: `¡Te aceptaron en ${project}! Ya eres parte del equipo`, href: `/ideas/${n.data.projectId}` };
     case 'APPLICATION_REJECTED':
       return { text: `Tu postulación a ${project} fue rechazada`, href: '/applications' };
     case 'TEAM_INVITE':
       return { text: `${actor} te invitó${role} a ${project}`, href: '/applications?tab=invites' };
     case 'INVITE_ACCEPTED':
-      return { text: `${actor} aceptó tu invitación a ${project}`, href: `/projects/${n.data.projectId}` };
+      return { text: `${actor} aceptó tu invitación a ${project}`, href: `/ideas/${n.data.projectId}` };
     case 'INVITE_DECLINED':
-      return { text: `${actor} declinó tu invitación a ${project}`, href: `/projects/${n.data.projectId}` };
+      return { text: `${actor} declinó tu invitación a ${project}`, href: `/ideas/${n.data.projectId}` };
     case 'MEMBER_LEFT':
-      return { text: `${actor} dejó el equipo de ${project}`, href: `/projects/${n.data.projectId}` };
+      return { text: `${actor} dejó el equipo de ${project}`, href: `/ideas/${n.data.projectId}` };
     case 'MEMBER_REMOVED':
-      return { text: `Ya no formas parte de ${project}`, href: `/projects/${n.data.projectId}` };
+      return { text: `Ya no formas parte de ${project}`, href: `/ideas/${n.data.projectId}` };
     case 'NEW_COMMENT':
       return {
         text: `${actor} comentó tu publicación${n.data.preview ? `: “${n.data.preview}”` : ''}`,
@@ -49,7 +53,7 @@ function describe(n: AppNotification): { text: string; href: string } {
     case 'MEETING_SCHEDULED':
       return {
         text: `${actor} agendó una reunión en ${project}${n.data.meetingTitle ? `: ${n.data.meetingTitle}` : ''}`,
-        href: n.data.projectId ? `/projects/${n.data.projectId}/meetings` : '/',
+        href: n.data.projectId ? `/ideas/${n.data.projectId}/meetings` : '/',
       };
     case 'SKILL_ENDORSED':
       return {
@@ -174,7 +178,7 @@ export function NotificationBell({ variant = 'compact' }: { variant?: 'compact' 
               </span>
             )}
           </span>
-          <span className="whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+          <span className="whitespace-nowrap opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 lg:opacity-100 transition-opacity duration-200">
             Notificaciones
           </span>
         </button>
@@ -218,14 +222,14 @@ export function NotificationBell({ variant = 'compact' }: { variant?: 'compact' 
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 onClick={() => setOpen(false)}
-                className="fixed inset-y-0 right-0 left-20 z-40 bg-black/10"
+                className="fixed inset-y-0 right-0 left-20 lg:left-60 z-40 bg-black/10"
               />
               <motion.aside
                 initial={{ x: -28, opacity: 0 }}
                 animate={{ x: 0, opacity: 1 }}
                 exit={{ x: -28, opacity: 0 }}
                 transition={{ type: 'spring', stiffness: 400, damping: 40 }}
-                className="fixed left-20 inset-y-0 z-50 flex w-[400px] max-w-[calc(100vw-5rem)] flex-col border-r bg-background shadow-2xl"
+                className="fixed left-20 lg:left-60 inset-y-0 z-50 flex w-[400px] max-w-[calc(100vw-5rem)] flex-col border-r bg-background shadow-2xl"
               >
                 <div className="flex items-center justify-between px-5 py-4 border-b shrink-0">
                   <h2 className="text-lg font-bold tracking-tight">Notificaciones</h2>

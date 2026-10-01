@@ -21,14 +21,14 @@ function initials(name: string | null | undefined) {
   return name ? name.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase() : '?';
 }
 
-/** Selector de proyecto propio + botón de inscripción. */
+/** Selector de idea propia + botón de inscripción. */
 function RegisterBox({ event }: { event: AppEvent }) {
   const queryClient = useQueryClient();
   const [projectId, setProjectId] = useState<string | null>(null);
 
   const { data: myProjects = [] } = useQuery<{ id: string; title: string }[]>({
     queryKey: ['my-projects'],
-    queryFn: async () => (await api.get('/projects/mine')).data,
+    queryFn: async () => (await api.get('/ideas/mine')).data,
   });
 
   const { data: memberships = [] } = useQuery<Membership[]>({
@@ -36,7 +36,7 @@ function RegisterBox({ event }: { event: AppEvent }) {
     queryFn: async () => (await api.get('/team/mine')).data,
   });
 
-  // Proyectos con los que puedo participar: los míos + donde soy miembro activo
+  // Ideas con los que puedo participar: los míos + donde soy miembro activo
   const teamOptions = [
     ...myProjects,
     ...memberships
@@ -238,7 +238,7 @@ export default function EventDetailPage() {
                   <p className="text-xs text-muted-foreground">{r.user.career ?? ''}</p>
                 </div>
                 {r.project && (
-                  <Link href={`/projects/${r.project.id}`}>
+                  <Link href={`/ideas/${r.project.id}`}>
                     <Badge variant="secondary">{r.project.title}</Badge>
                   </Link>
                 )}

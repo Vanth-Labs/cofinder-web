@@ -214,7 +214,7 @@ export default function AdminPage() {
         {stats && (
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             <StatTile label="Usuarios" value={stats.users.total} sub={`+${stats.users.lastWeek} esta semana`} />
-            <StatTile label="Proyectos" value={stats.projects.total} sub={`+${stats.projects.lastWeek} esta semana`} />
+            <StatTile label="Ideas" value={stats.projects.total} sub={`+${stats.projects.lastWeek} esta semana`} />
             <StatTile label="Miembros activos en equipos" value={stats.teams.activeMemberships} />
             <StatTile label="Matches" value={stats.engagement.matches} />
             <StatTile label="Mensajes" value={stats.engagement.messages} sub={`+${stats.engagement.messagesLastWeek} esta semana`} />
@@ -227,7 +227,7 @@ export default function AdminPage() {
         <div className="flex flex-wrap items-center gap-2 border-b pb-2">
           {([
             { key: 'reports', label: 'Reportes' },
-            { key: 'projects', label: 'Proyectos' },
+            { key: 'projects', label: 'Ideas' },
             { key: 'posts', label: 'Publicaciones' },
             { key: 'users', label: 'Usuarios' },
           ] as const).map((t) => (
@@ -325,7 +325,7 @@ export default function AdminPage() {
             <Card key={p.id}>
               <CardContent className="pt-4 pb-4 flex items-center gap-3">
                 <div className="flex-1 min-w-0">
-                  <Link href={`/projects/${p.id}`} className="font-medium text-sm hover:underline">
+                  <Link href={`/ideas/${p.id}`} className="font-medium text-sm hover:underline">
                     {p.title}
                   </Link>
                   <p className="text-xs text-muted-foreground">
@@ -381,7 +381,7 @@ export default function AdminPage() {
                     {u.name ?? 'Sin nombre'}
                   </Link>
                   <p className="text-xs text-muted-foreground">
-                    {u.email} · {u.career ?? '—'} · {u._count.projects} proyectos ·{' '}
+                    {u.email} · {u.career ?? '—'} · {u._count.projects} ideas ·{' '}
                     {u._count.posts} posts · {u._count.sentMessages} mensajes
                   </p>
                 </div>

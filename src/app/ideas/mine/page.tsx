@@ -57,17 +57,17 @@ function OpeningsManager({ project }: { project: MyProject }) {
   const invalidate = () => queryClient.invalidateQueries({ queryKey: ['my-projects'] });
 
   const { mutate: toggleOpening } = useMutation({
-    mutationFn: (o: RoleOpening) => api.patch(`/projects/openings/${o.id}`, { isOpen: !o.isOpen }),
+    mutationFn: (o: RoleOpening) => api.patch(`/ideas/openings/${o.id}`, { isOpen: !o.isOpen }),
     onSuccess: invalidate,
   });
 
   const { mutate: removeOpening } = useMutation({
-    mutationFn: (id: string) => api.delete(`/projects/openings/${id}`),
+    mutationFn: (id: string) => api.delete(`/ideas/openings/${id}`),
     onSuccess: invalidate,
   });
 
   const { mutate: addOpening, isPending: isAdding } = useMutation({
-    mutationFn: () => api.post(`/projects/${project.id}/openings`, { title: newTitle.trim() }),
+    mutationFn: () => api.post(`/ideas/${project.id}/openings`, { title: newTitle.trim() }),
     onSuccess: () => {
       setNewTitle('');
       invalidate();
@@ -146,7 +146,7 @@ function ProjectCard({ project }: { project: MyProject }) {
   const [budgetCurrency, setBudgetCurrency] = useState<'USD' | 'PEN'>(project.budgetCurrency ?? 'USD');
   const [coverKey, setCoverKey] = useState<string | null>(project.coverKey ?? null);
   const [mediaKeys, setMediaKeys] = useState<string[]>(
-    // La portada también es un MediaAsset del proyecto, pero se edita aparte.
+    // La portada también es un MediaAsset de la idea, pero se edita aparte.
     (project.media ?? []).map((m) => m.key).filter((k) => k !== project.coverKey),
   );
 
@@ -161,7 +161,7 @@ function ProjectCard({ project }: { project: MyProject }) {
 
   const { mutate: update, isPending: isUpdating, error: updateError } = useMutation({
     mutationFn: async () => {
-      const { data } = await api.patch(`/projects/${project.id}`, {
+      const { data } = await api.patch(`/ideas/${project.id}`, {
         title, description, stage, categories,
         budget: budget ? parseFloat(parseFloat(budget).toFixed(2)) : undefined,
         budgetCurrency: budget ? budgetCurrency : undefined,
@@ -178,7 +178,7 @@ function ProjectCard({ project }: { project: MyProject }) {
   });
 
   const { mutate: remove, isPending: isDeleting } = useMutation({
-    mutationFn: () => api.delete(`/projects/${project.id}`),
+    mutationFn: () => api.delete(`/ideas/${project.id}`),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['my-projects'] }),
   });
 
@@ -278,7 +278,7 @@ function ProjectCard({ project }: { project: MyProject }) {
       )}
       <CardContent className="pt-6 flex flex-col gap-4">
         <div className="flex items-start justify-between gap-2">
-          <Link href={`/projects/${project.id}`} className="font-semibold hover:underline">
+          <Link href={`/ideas/${project.id}`} className="font-semibold hover:underline">
             {project.title}
           </Link>
           <Badge variant="outline">{project.stage}</Badge>
@@ -286,7 +286,7 @@ function ProjectCard({ project }: { project: MyProject }) {
 
         <div className="flex flex-wrap gap-2 text-xs">
           {pendingCount > 0 && (
-            <Link href={`/projects/${project.id}`}>
+            <Link href={`/ideas/${project.id}`}>
               <Badge>{pendingCount} postulación{pendingCount > 1 ? 'es' : ''} pendiente{pendingCount > 1 ? 's' : ''}</Badge>
             </Link>
           )}
@@ -310,11 +310,13 @@ function ProjectCard({ project }: { project: MyProject }) {
             Presupuesto: {project.budgetCurrency === 'PEN' ? 'S/' : '$'}{project.budget.toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </p>
         )}
+        <Button asChild variant="outline"><Link href={`/chat/team/${project.id}`}>Chat del equipo</Link></Button>
+        <Button asChild><Link href={`/ideas/${project.id}/workspace`}>Espacio de trabajo · Proyectos y EDT</Link></Button>
         <OpeningsManager project={project} />
         <div className="flex gap-3 pt-2">
           <Button variant="outline" className="flex-1" onClick={() => setEditing(true)}>Editar</Button>
           <Button variant="destructive" className="flex-1" disabled={isDeleting}
-            onClick={() => { if (confirm('¿Eliminar este proyecto? Se eliminarán también los matches y chats asociados.')) remove(); }}>
+            onClick={() => { if (confirm('¿Eliminar esta idea? Se eliminarán sus proyectos, EDT, comentarios, matches y chats.')) remove(); }}>
             {isDeleting ? 'Eliminando...' : 'Eliminar'}
           </Button>
         </div>
@@ -329,7 +331,7 @@ export default function MyProjectsPage() {
   const { data: projects = [], isLoading } = useQuery<MyProject[]>({
     queryKey: ['my-projects'],
     queryFn: async () => {
-      const { data } = await api.get('/projects/mine');
+      const { data } = await api.get('/ideas/mine');
       return data;
     },
     enabled: isAuthenticated,
@@ -348,9 +350,9 @@ export default function MyProjectsPage() {
       
       <div className="max-w-lg mx-auto px-4 py-8 flex flex-col gap-4">
         <div className="flex items-center justify-between">
-          <h1 className="text-xl font-semibold">Mis proyectos</h1>
+          <h1 className="text-xl font-semibold">Mis ideas</h1>
           <Button asChild size="sm">
-            <Link href="/projects/new">+ Nuevo proyecto</Link>
+            <Link href="/ideas/new">+ Nueva idea</Link>
           </Button>
         </div>
 
@@ -358,7 +360,7 @@ export default function MyProjectsPage() {
 
         {!isLoading && projects.length === 0 && (
           <p className="text-muted-foreground text-sm py-8 text-center">
-            No tienes ningún proyecto publicado todavía.
+            No tienes ninguna idea publicada todavía.
           </p>
         )}
 

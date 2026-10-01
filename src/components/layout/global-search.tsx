@@ -75,11 +75,11 @@ export function GlobalSearch() {
           )}
           {(data?.projects.length ?? 0) > 0 && (
             <div>
-              <p className="text-xs font-medium text-muted-foreground px-3 pt-2 pb-1">Proyectos</p>
+              <p className="text-xs font-medium text-muted-foreground px-3 pt-2 pb-1">Ideas</p>
               {data!.projects.map((p) => (
                 <button
                   key={p.id}
-                  onClick={() => go(`/projects/${p.id}`)}
+                  onClick={() => go(`/ideas/${p.id}`)}
                   className="w-full text-left px-3 py-2 hover:bg-accent/50 text-sm"
                 >
                   <span className="font-medium">{p.title}</span>{' '}

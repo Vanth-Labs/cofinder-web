@@ -13,11 +13,11 @@ export function ProjectCard({ project }: { project: Project }) {
     : '?';
 
   // Miniatura (400px, ~12 KB), no la imagen completa: en una grilla de 20
-  // proyectos la diferencia se nota, sobre todo en datos móviles.
+  // ideas la diferencia se nota, sobre todo en datos móviles.
   const cover = thumbUrl(project.coverKey);
 
   return (
-    <Link href={`/projects/${project.id}`} className="block h-full">
+    <Link href={`/ideas/${project.id}`} className="block h-full">
       <Card className="h-full hover:bg-accent/50 transition-colors cursor-pointer">
         {/* Card ya trae el estilo para una imagen como primer hijo */}
         {cover && (

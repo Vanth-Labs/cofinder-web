@@ -24,7 +24,7 @@ function CallbackContent() {
       if (!data.name) {
         router.replace('/auth/onboarding');
       } else {
-        router.replace('/projects');
+        router.replace('/ideas');
       }
     }).catch(() => {
       router.replace('/');

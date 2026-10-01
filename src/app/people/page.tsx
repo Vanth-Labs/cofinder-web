@@ -54,7 +54,7 @@ function PersonCard({ user }: { user: DirectoryUser }) {
           )}
 
           <p className="text-xs text-muted-foreground mt-auto pt-1 border-t">
-            {user._count.projects} proyecto{user._count.projects !== 1 ? 's' : ''} ·{' '}
+            {user._count.projects} idea{user._count.projects !== 1 ? 's' : ''} ·{' '}
             {user._count.teamMembers} equipo{user._count.teamMembers !== 1 ? 's' : ''}
             {user.role === 'ALUMNI' ? ' · Alumni' : ''}
           </p>

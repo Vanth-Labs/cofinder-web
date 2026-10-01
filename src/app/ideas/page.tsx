@@ -28,7 +28,7 @@ export default function ProjectsPage() {
       if (stage) params.set('stage', stage);
       if (category) params.set('category', category);
       params.set('sort', sort);
-      const { data } = await api.get(`/projects?${params.toString()}`);
+      const { data } = await api.get(`/ideas?${params.toString()}`);
       return data;
     },
     enabled: isAuthenticated,
@@ -48,16 +48,17 @@ export default function ProjectsPage() {
       <div className="max-w-4xl mx-auto px-4 py-8 flex flex-col gap-5">
         <div className="flex items-center justify-between gap-2">
           <div>
-            <h1 className="text-xl font-semibold">Explorar proyectos</h1>
+            <h1 className="text-xl font-semibold">Explorar ideas</h1>
             <p className="text-sm text-muted-foreground">
-              Ideas y startups de la comunidad PUCP buscando equipo.
+              Ideas de la comunidad PUCP buscando equipo para hacerlas realidad.
             </p>
           </div>
           <Button asChild size="sm">
-            <Link href="/projects/new">+ Publicar</Link>
+            <Link href="/ideas/new">+ Publicar</Link>
           </Button>
         </div>
 
+        <Button asChild variant="outline" className="self-start"><Link href="/workspace">Mis espacios de trabajo</Link></Button>
         <div className="flex flex-col gap-3">
           <form
             onSubmit={(e) => {
@@ -119,13 +120,13 @@ export default function ProjectsPage() {
           </div>
         </div>
 
-        {isLoading && <p className="text-muted-foreground text-sm">Cargando proyectos...</p>}
+        {isLoading && <p className="text-muted-foreground text-sm">Cargando ideas...</p>}
 
         {!isLoading && projects.length === 0 && (
           <div className="text-center py-16 flex flex-col items-center gap-3">
-            <p className="text-muted-foreground text-sm">No hay proyectos con esos filtros.</p>
+            <p className="text-muted-foreground text-sm">No hay ideas con esos filtros.</p>
             <Button asChild variant="outline" size="sm">
-              <Link href="/projects/new">Publica el primero</Link>
+              <Link href="/ideas/new">Publica la primera</Link>
             </Button>
           </div>
         )}

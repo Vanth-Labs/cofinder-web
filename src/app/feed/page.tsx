@@ -40,7 +40,7 @@ function Composer() {
   const { data: myProjects = [] } = useQuery<{ id: string; title: string }[]>({
     queryKey: ['my-projects'],
     queryFn: async () => {
-      const { data } = await api.get('/projects/mine');
+      const { data } = await api.get('/ideas/mine');
       return data;
     },
   });
@@ -220,7 +220,7 @@ function PostCard({ post }: { post: Post }) {
                 <>
                   {' '}
                   <span className="text-muted-foreground">sobre</span>{' '}
-                  <Link href={`/projects/${post.project.id}`} className="font-medium hover:underline">
+                  <Link href={`/ideas/${post.project.id}`} className="font-medium hover:underline">
                     {post.project.title}
                   </Link>
                 </>

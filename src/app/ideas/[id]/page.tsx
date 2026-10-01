@@ -102,7 +102,7 @@ function ApplyForm({ project, onDone }: { project: Project; onDone: () => void }
             onChange={(e) => setMessage(e.target.value)}
             rows={3}
             maxLength={500}
-            placeholder="Cuéntale por qué encajas en el proyecto..."
+            placeholder="Cuéntale por qué encajas en la idea..."
           />
         </div>
         {error && (
@@ -218,7 +218,7 @@ export default function ProjectDetailPage() {
   const { data: project, isLoading } = useQuery<Project>({
     queryKey: ['project', projectId],
     queryFn: async () => {
-      const { data } = await api.get(`/projects/${projectId}`);
+      const { data } = await api.get(`/ideas/${projectId}`);
       return data;
     },
     enabled: isAuthenticated && !!projectId,
@@ -355,17 +355,19 @@ export default function ProjectDetailPage() {
               </div>
             )}
 
-            {/* Acciones según relación con el proyecto */}
+            {(isFounder || myMembership?.status === 'ACTIVE') && <Button asChild><Link href={`/ideas/${project.id}/workspace`}>Abrir espacio de trabajo · Proyectos y EDT</Link></Button>}
+
+            {/* Acciones según relación con la idea */}
             {isFounder ? (
               <div className="flex gap-2 pt-2 flex-wrap">
                 <Button asChild size="sm">
                   <Link href={`/chat/team/${project.id}`}>Chat del equipo</Link>
                 </Button>
                 <Button asChild variant="outline" size="sm">
-                  <Link href={`/projects/${project.id}/meetings`}>Reuniones</Link>
+                  <Link href={`/ideas/${project.id}/meetings`}>Reuniones</Link>
                 </Button>
                 <Button asChild variant="outline" size="sm">
-                  <Link href="/projects/mine">Editar en mis proyectos</Link>
+                  <Link href="/ideas/mine">Editar en mis ideas</Link>
                 </Button>
                 <Button asChild variant="outline" size="sm">
                   <Link href="/people">Invitar personas</Link>
@@ -374,12 +376,12 @@ export default function ProjectDetailPage() {
             ) : myMembership?.status === 'ACTIVE' ? (
               <div className="flex items-center justify-between gap-2 pt-2 flex-wrap">
                 <Badge>Eres parte del equipo · {myMembership.role}</Badge>
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2">
                   <Button asChild size="sm">
                     <Link href={`/chat/team/${project.id}`}>Chat del equipo</Link>
                   </Button>
                   <Button asChild variant="outline" size="sm">
-                    <Link href={`/projects/${project.id}/meetings`}>Reuniones</Link>
+                    <Link href={`/ideas/${project.id}/meetings`}>Reuniones</Link>
                   </Button>
                   <Button
                     variant="outline"
@@ -410,7 +412,7 @@ export default function ProjectDetailPage() {
               <div className="flex gap-2 pt-2">
                 {myMatch ? (
                   <Button asChild variant="outline" className="flex-1">
-                    <Link href={`/chat/${myMatch.id}`}>Abrir chat</Link>
+                    <Link href={`/chat/${myMatch.id}`}>Chat con el fundador</Link>
                   </Button>
                 ) : (
                   <Button

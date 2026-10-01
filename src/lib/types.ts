@@ -20,7 +20,9 @@ export type NotificationType =
   | 'NEW_COMMENT'
   | 'EVENT_REGISTRATION'
   | 'SKILL_ENDORSED'
-  | 'MEETING_SCHEDULED';
+  | 'MEETING_SCHEDULED'
+  | 'PACKAGE_ASSIGNED'
+  | 'PACKAGE_DEADLINE_CHANGED';
 
 export type ReportTargetType = 'PROJECT' | 'POST' | 'COMMENT' | 'USER' | 'EVENT';
 
@@ -90,7 +92,7 @@ export interface PublicProfile {
 }
 
 /**
- * Imagen de la galería de un proyecto o adjunta a un post. La portada NO va
+ * Imagen de la galería de una idea o adjunta a un post. La portada NO va
  * acá: es `Project.coverKey`. Guardamos la key; la URL la arma mediaUrl().
  */
 export interface MediaAsset {
@@ -194,6 +196,11 @@ export interface AppNotification {
   isRead: boolean;
   createdAt: string;
   data: {
+    ideaId?: string;
+    workspaceProjectId?: string;
+    packageId?: string;
+    packageTitle?: string;
+    deadline?: string | null;
     projectId?: string;
     projectTitle?: string;
     actorId?: string;

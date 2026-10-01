@@ -16,11 +16,12 @@ import { Textarea } from '@/components/ui/textarea';
 import { formatEventDate } from '@/lib/types';
 import type { Meeting, Membership, Project } from '@/lib/types';
 
-/** Formulario inline para agendar (mismo patrón que ApplyForm del proyecto). */
+/** Formulario inline para agendar (mismo patrón que ApplyForm de la idea). */
 function ScheduleMeetingForm({ projectId, onDone }: { projectId: string; onDone: () => void }) {
   const queryClient = useQueryClient();
   const [title, setTitle] = useState('');
   const [startsAt, setStartsAt] = useState('');
+  const [minStart] = useState(() => new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16));
   const [location, setLocation] = useState('');
   const [notes, setNotes] = useState('');
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -82,9 +83,7 @@ function ScheduleMeetingForm({ projectId, onDone }: { projectId: string; onDone:
               type="datetime-local"
               value={startsAt}
               onChange={(e) => setStartsAt(e.target.value)}
-              min={new Date(Date.now() - new Date().getTimezoneOffset() * 60000)
-                .toISOString()
-                .slice(0, 16)}
+              min={minStart}
               required
             />
           </div>
@@ -231,11 +230,11 @@ export default function ProjectMeetingsPage() {
   const [tab, setTab] = useState<'upcoming' | 'past'>('upcoming');
   const [showForm, setShowForm] = useState(false);
 
-  // Mismas queries (y keys) que la página del proyecto, para compartir caché
+  // Mismas queries (y keys) que la página de la idea, para compartir caché
   const { data: project, isLoading: projectLoading } = useQuery<Project>({
     queryKey: ['project', projectId],
     queryFn: async () => {
-      const { data } = await api.get(`/projects/${projectId}`);
+      const { data } = await api.get(`/ideas/${projectId}`);
       return data;
     },
     enabled: isAuthenticated && !!projectId,
@@ -286,7 +285,7 @@ export default function ProjectMeetingsPage() {
           <Card>
             <CardContent className="pt-6 pb-6 flex flex-col items-center gap-3 text-center">
               <p className="text-sm text-muted-foreground">
-                Solo el equipo del proyecto puede ver las reuniones.
+                Solo el equipo de la idea puede ver las reuniones.
               </p>
               <Button variant="outline" size="sm" onClick={() => router.back()}>
                 Volver

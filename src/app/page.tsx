@@ -47,7 +47,7 @@ export default function HomePage() {
 
   useEffect(() => {
     if (hasHydrated && isAuthenticated) {
-      router.replace('/projects');
+      router.replace('/ideas');
     }
   }, [hasHydrated, isAuthenticated, router]);
 
@@ -75,7 +75,7 @@ export default function HomePage() {
               </span>
             </h1>
             <p className="text-muted-foreground text-sm max-w-md">
-              Publica tu idea, encuentra equipo y únete a proyectos de la comunidad PUCP
+              Publica tu idea, encuentra equipo y únete a ideas de la comunidad PUCP
             </p>
           </div>
           <LoginButton />
@@ -88,7 +88,7 @@ export default function HomePage() {
           <>
             <div className="flex gap-8 text-center">
               {[
-                { value: showcase.stats.totalProjects, label: 'proyectos' },
+                { value: showcase.stats.totalProjects, label: 'ideas' },
                 { value: showcase.stats.totalUsers, label: 'miembros' },
                 { value: showcase.stats.activeMemberships, label: 'uniones a equipos' },
               ].map((s) => (
@@ -102,7 +102,7 @@ export default function HomePage() {
             {showcase.projects.length > 0 && (
               <div className="w-full flex flex-col gap-3">
                 <p className="text-sm font-medium text-center text-muted-foreground">
-                  Proyectos buscando equipo ahora mismo
+                  Ideas buscando equipo ahora mismo
                 </p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {showcase.projects.map((p) => (

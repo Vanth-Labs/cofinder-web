@@ -17,8 +17,8 @@ interface MyProject {
 }
 
 /**
- * Botón "Invitar a mi proyecto": despliega selección de proyecto + rol y envía
- * la invitación. Solo se muestra si el usuario actual tiene proyectos.
+ * Botón "Invitar a mi idea": despliega selección de idea + rol y envía
+ * la invitación. Solo se muestra si el usuario actual tiene ideas.
  */
 export function InviteButton({ targetUserId, targetName }: { targetUserId: string; targetName?: string | null }) {
   const currentUserId = useAuthStore((s) => s.user?.id);
@@ -31,7 +31,7 @@ export function InviteButton({ targetUserId, targetName }: { targetUserId: strin
   const { data: myProjects = [] } = useQuery<MyProject[]>({
     queryKey: ['my-projects'],
     queryFn: async () => {
-      const { data } = await api.get('/projects/mine');
+      const { data } = await api.get('/ideas/mine');
       return data;
     },
     enabled: !!currentUserId && open,
@@ -66,7 +66,7 @@ export function InviteButton({ targetUserId, targetName }: { targetUserId: strin
   if (!open) {
     return (
       <Button size="sm" variant="outline" onClick={() => setOpen(true)}>
-        Invitar a mi proyecto
+        Invitar a mi idea
       </Button>
     );
   }
@@ -76,12 +76,12 @@ export function InviteButton({ targetUserId, targetName }: { targetUserId: strin
       <CardContent className="pt-4 pb-4 flex flex-col gap-3">
         {myProjects.length === 0 ? (
           <p className="text-sm text-muted-foreground">
-            Primero publica un proyecto para poder invitar personas.
+            Primero publica una idea para poder invitar personas.
           </p>
         ) : (
           <>
             <div className="flex flex-col gap-1.5">
-              <Label>Proyecto</Label>
+              <Label>Idea</Label>
               <div className="flex flex-wrap gap-2">
                 {myProjects.map((p) => (
                   <Badge
