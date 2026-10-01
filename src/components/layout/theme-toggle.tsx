@@ -29,7 +29,7 @@ export function ThemeToggle({ variant = 'icon' }: { variant?: 'icon' | 'rail' })
       >
         <Moon size={24} strokeWidth={1.8} className="shrink-0 dark:hidden" />
         <Sun size={24} strokeWidth={1.8} className="hidden shrink-0 dark:block" />
-        <span className="whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+        <span className="whitespace-nowrap opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 lg:opacity-100 transition-opacity duration-200">
           Tema
         </span>
       </button>

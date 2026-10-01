@@ -2,20 +2,21 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Rss, Sparkles, Heart, UserCircle, Compass } from 'lucide-react';
+import { Rss, FolderKanban, Sparkles, MessageCircle, UserCircle, Compass } from 'lucide-react';
 
 const BOTTOM_LINKS = [
   { href: '/feed',    label: 'Feed',      icon: Rss,        matches: ['/feed'] },
   { href: '/swipe',   label: 'Descubrir', icon: Sparkles,   matches: ['/swipe'] },
-  { href: '/projects',label: 'Explorar',  icon: Compass,    matches: ['/projects'] },
-  { href: '/matches', label: 'Matches',   icon: Heart,      matches: ['/matches', '/chat'] },
+  { href: '/ideas',label: 'Explorar',  icon: Compass,    matches: ['/ideas'] },
+  { href: '/chat',    label: 'Chats',   icon: MessageCircle,      matches: ['/matches', '/chat'] },
+  { href: '/workspace', label: 'Espacios', icon: FolderKanban, matches: ['/workspace'] },
   { href: '/profile', label: 'Perfil',    icon: UserCircle, matches: ['/profile'] },
 ] as const;
 
 export function BottomNav() {
   const pathname = usePathname();
 
-  const activeHref = BOTTOM_LINKS.reduce<string | null>((best, l) => {
+  const activeHref = pathname.endsWith('/workspace') ? '/workspace' : BOTTOM_LINKS.reduce<string | null>((best, l) => {
     const hit = l.matches.find((m) => pathname.startsWith(m));
     if (!hit) return best;
     const bestLen = best
@@ -38,6 +39,7 @@ export function BottomNav() {
             <Link
               key={href}
               href={href}
+              aria-current={active ? 'page' : undefined}
               className={[
                 'flex flex-col items-center gap-0.5 flex-1 py-2 transition-colors',
                 active ? 'text-primary' : 'text-muted-foreground',

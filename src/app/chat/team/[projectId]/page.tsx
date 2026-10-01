@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 
 import { ChatRoom } from '@/components/chat/chat-room';
@@ -21,7 +21,6 @@ interface TeamChat {
 export default function TeamChatPage() {
   const params = useParams();
   const projectId = params.projectId as string;
-  const router = useRouter();
   const { hasHydrated, isAuthenticated } = useRequireAuth();
 
   const { data: chat, isLoading, isError } = useQuery<TeamChat>({
@@ -48,10 +47,11 @@ export default function TeamChatPage() {
         
         <div className="max-w-lg mx-auto px-4 py-16 text-center flex flex-col gap-3 items-center">
           <p className="text-muted-foreground text-sm">
-            Este chat es solo para el equipo del proyecto.
+            No pudimos abrir el chat. Comprueba tu conexión y que sigues siendo parte del equipo.
           </p>
-          <Link href={`/projects/${projectId}`} className="text-sm underline">
-            Ver el proyecto
+          <Link href="/chat?tab=teams" className="text-sm underline">← Volver a chats de equipos</Link>
+          <Link href={`/ideas/${projectId}`} className="text-sm underline">
+            Ver la idea
           </Link>
         </div>
       </main>
@@ -65,14 +65,11 @@ export default function TeamChatPage() {
       
       <div className="max-w-lg mx-auto w-full flex flex-col flex-1 px-4 py-4 gap-4">
         <div className="flex items-center gap-2">
-          <button
-            onClick={() => router.back()}
-            className="text-muted-foreground hover:text-foreground text-sm"
-          >
-            ←
-          </button>
+          <Link href="/chat?tab=teams" className="shrink-0 rounded-md px-2 py-3 text-sm text-muted-foreground hover:text-foreground" aria-label="Volver a chats">
+            ← Chats
+          </Link>
           <div className="min-w-0">
-            <Link href={`/projects/${chat.project.id}`} className="font-semibold hover:underline">
+            <Link href={`/ideas/${chat.project.id}`} className="font-semibold hover:underline">
               {chat.project.title}
             </Link>
             <p className="text-xs text-muted-foreground">

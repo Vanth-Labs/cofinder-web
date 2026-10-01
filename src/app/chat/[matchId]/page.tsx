@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 
 import { ChatRoom } from '@/components/chat/chat-room';
@@ -13,11 +13,10 @@ import { Match } from '@/lib/types';
 export default function ChatPage() {
   const params = useParams();
   const matchId = params.matchId as string;
-  const router = useRouter();
   const { hasHydrated, isAuthenticated } = useRequireAuth();
   const currentUserId = useAuthStore((s) => s.user?.id);
 
-  const { data: match, isLoading: matchLoading } = useQuery<Match>({
+  const { data: match, isLoading: matchLoading, isError, refetch } = useQuery<Match>({
     queryKey: ['match', matchId],
     queryFn: async () => {
       const { data } = await api.get(`/matches/${matchId}`);
@@ -44,25 +43,22 @@ export default function ChatPage() {
       
       <div className="max-w-lg mx-auto w-full flex flex-col flex-1 px-4 py-4 gap-4">
         <div className="flex items-center gap-2">
-          <button
-            onClick={() => router.back()}
-            className="text-muted-foreground hover:text-foreground text-sm"
-          >
-            ←
-          </button>
+          <Link href="/chat?tab=individual" className="shrink-0 rounded-md px-2 py-3 text-sm text-muted-foreground hover:text-foreground" aria-label="Volver a chats">
+            ← Chats
+          </Link>
           <div className="min-w-0">
             {matchLoading ? (
               <h1 className="font-semibold">Cargando...</h1>
             ) : (
               <>
-                <Link href={`/projects/${match?.project.id}`} className="font-semibold hover:underline">
-                  {match?.project.title ?? 'Chat'}
-                </Link>
+                <h1 className="font-semibold">
+                  {other?.name ?? 'Chat individual'}
+                </h1>
                 {other && (
                   <p className="text-xs text-muted-foreground truncate">
-                    con{' '}
-                    <Link href={`/users/${other.id}`} className="hover:underline">
-                      {other.name ?? 'usuario'}
+                    Chat individual · {' '}
+                    <Link href={`/ideas/${match?.project.id}`} className="hover:underline">
+                      {match?.project.title}
                     </Link>
                   </p>
                 )}
@@ -71,6 +67,8 @@ export default function ChatPage() {
           </div>
         </div>
 
+        {isError && <div role="alert" className="text-sm text-destructive">No se pudo cargar la conversación. <button className="underline" onClick={() => refetch()}>Reintentar</button></div>}
+        {!matchLoading && !isError && !match?.chat && <p className="text-sm text-muted-foreground">Esta conversación no está disponible.</p>}
         {match?.chat?.id && <ChatRoom chatId={match.chat.id} />}
       </div>
     </main>
